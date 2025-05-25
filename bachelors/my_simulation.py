@@ -4,36 +4,52 @@ Created on Sun May 18 12:34:14 2025
 
 @author: Geri
 """
-
 import rebound
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy import constants as const
-def my_simulation(r_pebble, a_pebble, f_pebble ): #in meters / AU, y=0.025 does the work
+
+
+def my_simulation(r_pebble, x_h, y_h ): #in meters / Hill spheres, here 0.01au
     sim = rebound.Simulation()
     sim.collision = "line"
     sim.units = ('yr', 'AU', 'Msun')
-    sim.add(m=1, r=4.67e-3)
-    sim.add(m=3e-6,r=4.26e-5, a=1)
-    sim.add(m=4*np.pi*r_pebble**3*1500/(3*const.M_sun.value) ,r=r_pebble/const.au.value, a = a_pebble, f = f_pebble) # see rebound.orbit.Orbit?
+    
+    dist_pl = 1
+    M_star = 1
+    M_planet = 3e-6
+    r_H = np.sqrt(M_planet/(3*(M_planet + M_star)))
+    
+    sim.add(m=M_star , r=4.67e-3)
+    sim.add(m=M_planet ,r=4.26e-5, a= dist_pl)
+    sim.add(m=4*np.pi*r_pebble**3*1500/(3*const.M_sun.value) ,r=r_pebble/const.au.value, 
+            a = r_H * np.sqrt(((dist_pl/r_H) + x_h)**2 + y_h**2),  
+            f = np.arctan2(y_h, dist_pl/r_H + x_h)) # see rebound.orbit.Orbit?
     sim.move_to_com()
+    
+    p0 = sim.particles[0]
+    p1 = sim.particles[1]
+    p2 = sim.particles[2]
+    
     nt = 4000
     data = np.zeros([nt, 2 * sim.N])
     time = np.linspace(0, 80, nt)
     
-    data[0, :] = [i for p in sim.particles for i in [p.x, p.y]]
+    data[0, :] = [i /r_H for p in sim.particles for i in [p.x, p.y]]
     try: 
         for i, t in enumerate(time[1:]):
             sim.integrate(t) 
-            data[i + 1, :] = [coord for p in sim.particles for coord in [p.x, p.y]] 
+            data[i + 1, :] = [coord / r_H for p in sim.particles for coord in [p.x , p.y]] 
         #using coord instead of i for clarity
     except rebound.Collision as error:
-        print(error)
+        print(f'{error} for x_start = {x_h}, y_start = {y_h}')
+        colour = True
         data = data[:i+1, :]
     return data
-data = my_simulation(r_pebble = 1, a_pebble = 0.993, f_pebble = 0.04)
+"""
+data = my_simulation(r_pebble = 1, x_h = 20, y_h = 20) #IN HILL RADII FOR X,Y
 
-width = 1.1
+width = 1100
 f, ax = plt.subplots()
 ax.plot(data[:, 0], data[:, 1], 'k+-')
 ax.plot(data[:, 2], data[:, 3], '+-')
@@ -56,12 +72,13 @@ x0, y0 = rotate(data[:, 0], data[:, 1], -phi)
 x1, y1 = rotate(data[:, 2], data[:, 3], -phi)
 x2, y2 = rotate(data[:, 4], data[:, 5], -phi)
 
-width = 1e-1
+width = 1e2
 f, ax = plt.subplots()
 ax.plot(x0, y0, 'k+-')
 ax.plot(x1, y1, '+-')
 ax.plot(x2, y2, '+--', linewidth=0.5)
 
-ax.set_aspect(10)
-ax.set(xlim=[1-width, 1+width], ylim=[-width/10, width/10])
+ax.set_aspect(1)
+ax.set(xlim=[1000-width, 1000+width], ylim=[-width, width]) 
 
+"""

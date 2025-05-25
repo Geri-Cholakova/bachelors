@@ -5,38 +5,63 @@ Created on Sun May 18 15:56:02 2025
 @author: Geri
 """
 
-import rebound
 import matplotlib.pyplot as plt
 import numpy as np
 import my_simulation as ms
+from multiprocessing.pool import Pool
+import time
+
+start = time.time()
 
 all_data = [] # a list
-initial_data = ms.my_simulation(r_pebble=100, a_pebble=0.99, f_pebble=0.03)
+initial_data = ms.my_simulation(r_pebble=100, x_h=0, y_h=100)
+#here the assumption is that initial data doesn't have a collision; that in diff simulations the difference in planet placement is negligible
 all_data.append(initial_data)
-a_upper_limit = 1.01
-a_lower_limit = 0.99
-da = 0.005
-    
+
+x_upper = 40
+x_lower = 20
+dx = 2 #we'll use it for dy as well
+
+y_upper = 40
+y_lower = 20
+dy = 2
+
+
 phi = np.arctan2(initial_data[:, 3], initial_data[:, 2])
 
-def rotate(x, y, phi):
+def rotate_h(x, y, phi):
     c = np.cos(phi)
     s = np.sin(phi)
-    return c * x - s * y, s * x + c * y
+    return c * x - s * y - 999.985, s * x + c * y
 #rotation matrix [cosa -sina] [sina cosa]
 #the fkt returns 2 elements 
 
-width = 1e-1
-x0, y0 = rotate(initial_data[:, 0], initial_data[:, 1], -phi)
-x1, y1 = rotate(initial_data[:, 2], initial_data[:, 3], -phi) 
+width = 50
+x0, y0 = rotate_h(initial_data[:, 0], initial_data[:, 1], -phi)
+x1, y1 = rotate_h(initial_data[:, 2], initial_data[:, 3], -phi) 
 f, ax = plt.subplots()
-ax.plot(x0, y0, 'k+-')
-ax.plot(x1, y1, '+-')
+ax.plot(x0 , y0, 'k+-')
+ax.plot(x1 , y1, 'k--')
+r_hill = plt.Circle((0, 0), 1, color='c')
+r_earth = plt.Circle((0, 0), 4.267e-2, color='b')
+ax.add_patch(r_hill)
+ax.add_patch(r_earth)
 
-for x in np.linspace(a_upper_limit, a_lower_limit, int((a_upper_limit - a_lower_limit)/da)):
-    data = ms.my_simulation(r_pebble = 100, a_pebble = x, f_pebble = 0.03)
-    xp, yp = rotate(data[:, 4], data[:, 5], -phi)
-    ax.plot(xp, yp, '+--', linewidth= 0.5)
+float_err = 1e-14
+x_range = np.array([m for m in range(-x_upper, x_upper, dx) if abs(m) >= 20])
+y_range = np.array([l for l in range(-y_upper, y_upper, dy) if abs(l) >= 20])
 
-ax.set_aspect(10)
-ax.set(xlim=[1-width, 1+width], ylim=[-width/10, width/10])
+for x in x_range: 
+    for y in y_range: 
+        data = ms.my_simulation(r_pebble = 100, x_h = x, y_h = y) 
+        phi_pebble = np.arctan2(data[:, 3], data[:, 2]) 
+        xp, yp = rotate_h(data[:, 4], data[:, 5], -phi_pebble) 
+        if data.shape == (4000, 6):
+            ax.plot(xp , yp, '-', color='gray' , linewidth= 0.5, alpha =0.25)
+        else: 
+            ax.plot(xp , yp, '-', color='red' , linewidth= 0.5, zorder=10)
+
+ax.set_aspect(1)
+ax.set(xlim=[-width, width], ylim=[-width, width])
+end = time.time()
+print(end-start)
