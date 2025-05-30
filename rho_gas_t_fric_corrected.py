@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May 16 11:18:20 2025
+
+@author: Geri"""
+import rebound
+import numpy as np
+import math
+from astropy import constants as const
+from astropy import units as u
+
+norm = float(np.sqrt(const.G * const.M_sun / const.au) * u.s / u.m)
+r_H = 0.001
+
+
+def velocities(s, x, y, r_h=r_H, n=-2.75, z=0, eps=0.01):
+    # everything should be in si
+    x = (x * r_h + 1) * const.au.value
+    y = y * r_h * const.au.value
+    z = z * r_h * const.au.value  # here in AU's
+    rho_s = 1500
+    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    T = 200 * (const.au.value / r) ** 0.5
+    Sigma = 2000 * (const.au.value / r)
+    mu = 2.3
+    c_s = (const.k_B.value * T / (mu * const.m_p.value)) ** 0.5
+    Omega = (const.G.value * const.M_sun.value / r ** 3) ** 0.5
+    h = c_s / Omega
+    rho = (Sigma / (np.sqrt(2 * np.pi) * h)) * np.e ** (-(z ** 2) / (2 * h))
+    t_fric = rho_s * s / (rho * c_s * np.sqrt(8 / np.pi))
+    St = t_fric * Omega
+    # we assume homogenous gas disk with P prop. to r**-n
+    nu = -0.5 * (h / r) ** 2 * n
+    # we use units for m=1, g=1, so we need to norm the result
+    v_k = Omega * r
+    v_dust_r = -2 / (St + (1 + eps) ** 2 / St) * nu * v_k
+    v_dust_phi = v_k - (1 + eps) / ((1 + eps) ** 2 + St ** 2) * nu * v_k
+    v_gas_r = -2 * eps / (St + (1 + eps) ** 2 / St) * nu * v_k
+    v_gas_phi = (
+        v_k + (eps / ((1 + eps) * (1 + St ** 2 / (1 + eps) ** 2)) - 1) * nu * v_k
+    )
+
+    sina = y / np.sqrt(x ** 2 + y ** 2)
+    cosa = np.sqrt(1 - sina ** 2)
+
+    v_kep_x = -v_k * sina
+    v_kep_y = v_k * cosa
+    v_dust_x = -v_dust_r * cosa - v_dust_phi * sina
+    v_dust_y = -v_dust_r * sina + v_dust_phi * cosa
+    v_gas_x = -v_gas_r * cosa - v_gas_phi * sina
+    v_gas_y = -v_gas_r * sina + v_gas_phi * cosa
+    return (
+        v_kep_x / norm,
+        v_kep_y / norm,
+        v_dust_x / norm,
+        v_dust_y / norm,
+        v_gas_x / norm,
+        v_gas_y / norm,
+    )
+
+
+"""
+vel = velocities(s=0.000001, x=0, y=0, r_h=0.001)
+print(vel, norm)
+sim = rebound.Simulation()
+sim.add(m=1)
+sim.add(m=3.14e-27, x=1, y=0, vx=vel[0], vy=vel[1])
+sim.add(m=1e-30, x=1.01, y=0, vx=vel[2], vy=vel[3])
+sim.move_to_com()
+# to not have a drift because of center of mass movement
+sim.integrate(2.0 * np.pi * 10000)
+# seeing the simulation after time t=100 for 2*pi*t=1 yr for a=1, M_central=1
+sim.status()
+# seeing the data on which basis the plot is made
+rebound.OrbitPlot(sim)
+# plot the orbital data after t iterations
+"""
