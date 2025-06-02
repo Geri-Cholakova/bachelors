@@ -24,13 +24,13 @@ phi = np.arctan2(initial_data[:, 3], initial_data[:, 2])
 def rotate_h(x, y, phi):
     c = np.cos(phi)
     s = np.sin(phi)
-    return c * x - s * y - 999.9985, s * x + c * y
+    return c * x - s * y - 99.9985, s * x + c * y
 
 
 # rotation matrix [cosa -sina] [sina cosa]
 # the fkt returns 2 elements
 
-width = 50
+width = 10
 x0, y0 = rotate_h(initial_data[:, 0], initial_data[:, 1], -phi)
 x1, y1 = rotate_h(initial_data[:, 2], initial_data[:, 3], -phi)
 f, ax = plt.subplots()
@@ -42,8 +42,8 @@ ax.add_patch(r_hill)
 ax.add_patch(r_earth)
 
 if __name__ == "__main__":
-    x_values = np.linspace(1, 51, 50)
-    y_values = np.linspace(1, 51, 50)
+    x_values = np.linspace(1, 10, 46)
+    y_values = np.linspace(1, 10, 46)
     s = 1  # radius of the pebble, in m
     # make long array with all parameter combinations, here x,z
     xy = np.array(np.meshgrid(x_values, y_values, indexing="ij")).reshape(2, -1).T
@@ -69,4 +69,6 @@ if __name__ == "__main__":
                 )
     ax.set_aspect(1)
     ax.set(xlim=[-width, width], ylim=[-width, width])
-    plt.savefig("Pebble_with_vdust_xy_1-51_rH_dx_1_rH.pdf", dpi=300)
+    plt.savefig(
+        "Pebble_with_vdust_xy_-1-10_rH_dx_0.2_rH.pdf", dpi=300,
+    )

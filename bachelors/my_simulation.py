@@ -8,7 +8,7 @@ import rebound
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy import constants as const
-import rho_gas_t_fric_corrected as calc
+import calculations as calc
 
 
 def my_simulation(
@@ -19,7 +19,7 @@ def my_simulation(
     sim.units = ("yr", "AU", "Msun")
     sim.G = 1
 
-    r_H = dist_pl * np.sqrt(M_planet / (3 * (M_planet + M_star)))
+    r_H = dist_pl * np.cbrt(M_planet / (3 * (M_planet + M_star)))
     vel = calc.velocities(s=r_pebble, x=x_h, y=y_h, r_h=r_H, z=z_h)
 
     sim.add(m=M_star, r=4.67e-3)
