@@ -18,28 +18,28 @@ def T_rho(x, y, z=0, r_h=r_H):
     y = y * r_h * const.au.value
     z = z * r_h * const.au.value  # here in AU's
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
-    T = 200 * (const.au.value / r) ** 0.5
+    T = 200 * np.sqrt(const.au.value / r)
     Sigma = 2000 * (const.au.value / r)
     mu = 2.3
-    c_s = (const.k_B.value * T / (mu * const.m_p.value)) ** 0.5
-    Omega = (const.G.value * const.M_sun.value / r ** 3) ** 0.5
+    c_s = np.sqrt(const.k_B.value * T / (mu * const.m_p.value))
+    Omega = np.sqrt(const.G.value * const.M_sun.value / r ** 3)
     h = c_s / Omega
     rho = (Sigma / (np.sqrt(2 * np.pi) * h)) * np.e ** (-(z ** 2) / (2 * h))
     return (T, rho)
 
 
-def velocities(s, x, y, r_h=r_H, n=-3, z=0, eps=0.01):
+def velocities(s, x, y, r_h=r_H, n=-2.75, z=0, eps=0.01):
     # everything should be in si
     x = (x * r_h + 1) * const.au.value
     y = y * r_h * const.au.value
     z = z * r_h * const.au.value  # here in AU's
     rho_s = 1500
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
-    T = 200 * (const.au.value / r) ** 0.5
+    T = 200 * np.sqrt(const.au.value / r)
     Sigma = 2000 * (const.au.value / r)
     mu = 2.3
-    c_s = (const.k_B.value * T / (mu * const.m_p.value)) ** 0.5
-    Omega = (const.G.value * const.M_sun.value / r ** 3) ** 0.5
+    c_s = np.sqrt(const.k_B.value * T / (mu * const.m_p.value))
+    Omega = np.sqrt(const.G.value * const.M_sun.value / r ** 3)
     h = c_s / Omega
     rho = (Sigma / (np.sqrt(2 * np.pi) * h)) * np.e ** (-(z ** 2) / (2 * h))
     t_fric = rho_s * s / (rho * c_s * np.sqrt(8 / np.pi))
@@ -76,9 +76,12 @@ def velocities(s, x, y, r_h=r_H, n=-3, z=0, eps=0.01):
     )
 
 
+"""for xn in range(-900, 1000, 10):
+    for yn in range(-900, 1000, 10):
+        vel = velocities(s=1, x=xn, y=yn, r_h=0.01)
+        if (vel[2] ** 2 + vel[3] ** 2) > (vel[4] ** 2 + vel[5] ** 2):
+            print(1 / (vel[0] ** 2 + vel[1] ** 2))"""
 """
-vel = velocities(s=0.000001, x=0, y=0, r_h=0.001)
-print(vel, norm)
 sim = rebound.Simulation()
 sim.add(m=1)
 sim.add(m=3.14e-27, x=1, y=0, vx=vel[0], vy=vel[1])
