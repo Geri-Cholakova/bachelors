@@ -20,7 +20,7 @@ def my_simulation(
     sim.G = 1
 
     r_H = dist_pl * np.cbrt(M_planet / (3 * (M_planet + M_star)))
-    vel = calc.velocities(s=r_pebble, x=x_h, y=y_h, r_h=r_H, z=z_h)
+    vel = calc.velocities_rh(s=r_pebble, x=x_h, y=y_h, r_h=r_H, z=z_h)
 
     sim.add(m=M_star, r=4.67e-3)
     sim.add(m=M_planet, r=4.26e-5, a=dist_pl)
