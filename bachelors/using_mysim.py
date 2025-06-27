@@ -17,7 +17,7 @@ from functools import partial
 all_data = []  # a list
 force = True
 
-initial_data = ms.my_simulation(r_pebble=1, x_h=0, y_h=100)
+initial_data = ms.my_simulation(r_pebble=1, x_h=0, y_h=100, force = False)
 # here the assumption is that initial data doesn't have a collision; that in diff simulations the difference in planet placement is negligible
 all_data.append(initial_data)
 
@@ -45,8 +45,8 @@ ax.add_patch(r_hill)
 ax.add_patch(r_earth)
 
 if __name__ == "__main__":
-    number_values = 2
-    x_values = np.linspace(1.4, 1.6, number_values)
+    number_values = 6
+    x_values = np.linspace(1.4, 2.4, number_values)
     y_values = np.linspace(5, 10, number_values)
     # make long array with all parameter combinations, here x,z
     xy = np.array(np.meshgrid(x_values, y_values, indexing="ij")).reshape(2, -1).T
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     norm_s = 2.0 * np.pi/(1*u.year).si.value # in rebound unit * s^-1
     rho_s = 1500 # in kg/m**3
     s = 1  # radius of the pebble, in m
-    worker_with_s = partial(ms.worker, r_pebble = s, E_coef = np.sqrt(8 / np.pi) / (rho_s * s) /norm_s)
+    worker_with_s = partial(ms.worker, r_pebble = s, E_coef = np.sqrt(8 / np.pi) / (rho_s * s) /norm_s, force = force)
     #I am only incl change of parameter r_pebble, but the worker function could have other parameters changed as well
 
     with Pool(4) as p:

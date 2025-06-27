@@ -9,10 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy import constants as const
 import calculations as calc
-from force_example import Epsteindrag
+from force_example import make_epstein_drag
 
 
-def my_simulation( r_pebble, x_h, y_h, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6, force = False, E_coef = 0 ):  # in meters / Hill spheres, here 0.01au
+def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6, E_coef = 5343.21 ):  # in meters / Hill spheres, here 0.01au
     sim = rebound.Simulation()
     sim.collision = "line"
     sim.units = ("yr", "AU", "Msun")
@@ -37,16 +37,13 @@ def my_simulation( r_pebble, x_h, y_h, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_
     )  # see rebound.orbit.Orbit?
     # vel[0/1] - kepl velocity, vel[2/3] - dust velocity
     sim.move_to_com()
-    
-    ps = sim.particles
-    ps_pebble = sim.particles[2]
 
 
     data = np.zeros([nt, 2 * sim.N])
     time = np.linspace(0, n_orb, nt)
     
-    if force:
-        sim.additional_forces = Epsteindrag 
+    if force == True:
+        sim.additional_forces = make_epstein_drag(ps_pebble = sim.particles[2], E_coef = E_coef) 
         sim.force_is_velocity_dependent = 1
 
     data[0, :] = [i / r_H for p in sim.particles for i in [p.x, p.y]]

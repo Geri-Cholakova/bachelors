@@ -50,7 +50,7 @@ else:
     sim.add(m=M_star, r=4.67e-3)
     
     sim.add(m=m_pebble*norm_kg, r=r_pebble*norm_m, x=x, y=y, z=z, vx= v_dust_x, vy = v_dust_y, 
-            vz = -St * z * Omega )
+            vz = -St * z * Omega ) #all v_dust/gas, z and Omega are in rebound units
     sim.move_to_com()
     ps_pebble = sim.particles[1]
     # defining a non-conservative force F = m*v/tau
@@ -84,27 +84,28 @@ else:
         ps[1].ay -= coef_S * rho* (ps[1].vy - v_gas_y)* c_s
         ps[1].az -= coef_S * rho * ps[1].vz  * c_s """
     
-    coef_E = np.sqrt(8 / np.pi) / (rho_s * r_pebble) /norm_s
+    E_coef = np.sqrt(8 / np.pi) / (rho_s * r_pebble) /norm_s
     # we're norming that for rho_dust, 
-    
-    def Epsteindrag(reb_sim):
-        px = ps_pebble.x
-        py = ps_pebble.y
-        pz = ps_pebble.z
-    
-    
-        c_s, rho = calc.cs_rho(x=px, y=py, z=pz)
-        St, nu, v_dust_x, v_dust_y, v_gas_x, v_gas_y = calc.velocities_cart(
-            s = r_pebble, x = px, y= py, z= pz)
-        # everything thats not in those parameters is incl in coef_E
-    
-        ps_pebble.ax -= coef_E * c_s *rho * (ps_pebble.vx - v_gas_x)
-        ps_pebble.ay -= coef_E * c_s *rho * (ps_pebble.vy - v_gas_y) 
-        ps_pebble.az -= coef_E * c_s *rho * ps_pebble.vz
+    def make_epstein_drag(ps_pebble, E_coef):
+        def Epsteindrag(reb_sim):
+            px = ps_pebble.x
+            py = ps_pebble.y
+            pz = ps_pebble.z
         
-        #i wanna break here
+        
+            c_s, rho = calc.cs_rho(x=px, y=py, z=pz)
+            St, nu, v_dust_x, v_dust_y, v_gas_x, v_gas_y = calc.velocities_cart(
+                s = r_pebble, x = px, y= py, z= pz)
+            # everything thats not in those parameters is incl in coef_E
+        
+            ps_pebble.ax -= E_coef * c_s *rho * (ps_pebble.vx - v_gas_x)
+            ps_pebble.ay -= E_coef * c_s *rho * (ps_pebble.vy - v_gas_y) 
+            ps_pebble.az -= E_coef * c_s *rho * ps_pebble.vz
+            #here we have NO return statement
+        return Epsteindrag   
+        #the point is to get the Epsteindrag function in an easy for rebound to use way 
     
-    sim.additional_forces = Epsteindrag
+    sim.additional_forces = make_epstein_drag(ps_pebble = ps_pebble,  E_coef =  E_coef)
     sim.force_is_velocity_dependent = 1
     """
     
