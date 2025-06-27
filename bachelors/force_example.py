@@ -20,7 +20,7 @@ inclin = 1e-7
 eps = 0.01
 rho_s = 1500
 
-if inclin > 1e-3:
+if inclin > 1:
     print("Your z is too large, there's a risk rho = 0")
 else:
     
@@ -52,7 +52,7 @@ else:
     sim.add(m=m_pebble*norm_kg, r=r_pebble*norm_m, x=x, y=y, z=z, vx= v_dust_x, vy = v_dust_y, 
             vz = -St * z * Omega )
     sim.move_to_com()
-    ps = sim.particles
+    ps_pebble = sim.particles[1]
     # defining a non-conservative force F = m*v/tau
     # coeff for Stokes
     """
@@ -88,9 +88,9 @@ else:
     # we're norming that for rho_dust, 
     
     def Epsteindrag(reb_sim):
-        px = ps[1].x
-        py = ps[1].y
-        pz = ps[1].z
+        px = ps_pebble.x
+        py = ps_pebble.y
+        pz = ps_pebble.z
     
     
         c_s, rho = calc.cs_rho(x=px, y=py, z=pz)
@@ -98,14 +98,15 @@ else:
             s = r_pebble, x = px, y= py, z= pz)
         # everything thats not in those parameters is incl in coef_E
     
-        ps[1].ax -= coef_E * c_s *rho * (ps[1].vx - v_gas_x)
-        ps[1].ay -= coef_E * c_s *rho * (ps[1].vy - v_gas_y) 
-        ps[1].az -= coef_E * c_s *rho * ps[1].vz
+        ps_pebble.ax -= coef_E * c_s *rho * (ps_pebble.vx - v_gas_x)
+        ps_pebble.ay -= coef_E * c_s *rho * (ps_pebble.vy - v_gas_y) 
+        ps_pebble.az -= coef_E * c_s *rho * ps_pebble.vz
         
         #i wanna break here
     
     sim.additional_forces = Epsteindrag
     sim.force_is_velocity_dependent = 1
+    """
     
     #sim.integrate(sim.t + 2* np.pi )  # advance slightly so that a=/= 0 for first timestep
     
@@ -173,5 +174,5 @@ else:
     del_v = np.mean(v_code - v_th)
     print("Delta x: ", del_v * t_stop)
 
-    
+   """ 
     

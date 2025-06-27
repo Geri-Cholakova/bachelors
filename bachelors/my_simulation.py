@@ -9,18 +9,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy import constants as const
 import calculations as calc
+from force_example import Epsteindrag
 
 
-def my_simulation(
-    r_pebble, x_h, y_h, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6
-):  # in meters / Hill spheres, here 0.01au
+def my_simulation( r_pebble, x_h, y_h, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6, force = False, E_coef = 0 ):  # in meters / Hill spheres, here 0.01au
     sim = rebound.Simulation()
     sim.collision = "line"
     sim.units = ("yr", "AU", "Msun")
     sim.G = 1
 
     r_H = dist_pl * np.cbrt(M_planet / (3 * (M_planet + M_star)))
-    vel = calc.velocities_rh(s=r_pebble, x=x_h, y=y_h, r_h=r_H, z=z_h)
+    St, eta, v_dust_x, v_dust_y, v_gas_x, v_gas_y = calc.velocities_rh(s=r_pebble, x=x_h, y=y_h, r_h=r_H, z=z_h)
+    
+    R = np.sqrt((x_h * r_H + 1)**2 + (y_h * r_H)**2)
+    Omega = np.sqrt(sim.G * M_star/R**3)
 
     sim.add(m=M_star, r=4.67e-3)
     sim.add(m=M_planet, r=4.26e-5, a=dist_pl)
@@ -30,18 +32,22 @@ def my_simulation(
         x=x_h * r_H + 1,
         y=y_h * r_H,
         z=z_h * r_H,
-        vx=vel[2],
-        vy=vel[3],
+        vx=v_dust_x,
+        vy=v_dust_y, vz= -St * Omega * z_h * r_H 
     )  # see rebound.orbit.Orbit?
     # vel[0/1] - kepl velocity, vel[2/3] - dust velocity
     sim.move_to_com()
+    
+    ps = sim.particles
+    ps_pebble = sim.particles[2]
 
-    p0 = sim.particles[0]
-    p1 = sim.particles[1]
-    p2 = sim.particles[2]
 
     data = np.zeros([nt, 2 * sim.N])
     time = np.linspace(0, n_orb, nt)
+    
+    if force:
+        sim.additional_forces = Epsteindrag 
+        sim.force_is_velocity_dependent = 1
 
     data[0, :] = [i / r_H for p in sim.particles for i in [p.x, p.y]]
     try:
@@ -57,8 +63,8 @@ def my_simulation(
     return data
 
 
-def worker(arg):
-    return my_simulation(r_pebble=1, x_h=arg[0], y_h=arg[1], z_h=0, n_orb=20, nt=50000)
+def worker(arg, r_pebble, E_coef, n_orb = 20, nt = 50000, force = True):
+    return my_simulation(r_pebble= r_pebble, x_h=arg[0], y_h=arg[1], z_h=0, n_orb=n_orb, nt=nt, force = force, E_coef = E_coef)
 
 
 """
