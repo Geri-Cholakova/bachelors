@@ -11,8 +11,25 @@ from astropy import constants as const
 import calculations as calc
 from force_example import make_epstein_drag
 
+class DistanceException(Exception):
+    """Particle with index 2 was too far away from
+    particle with index 1.
+    """      
+    def __str__(self):
+        return("Particle gets really far away")
+    pass
 
-def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6, E_coef = 5343.21 ):  # in meters / Hill spheres, here 0.01au
+def distance_check(sim):
+    "heartbeat function to stop simulation"
+    #sim = sim.contents
+    p0 = sim.particles[1]
+    p1 = sim.particles[2]
+    d = np.sqrt((p0.x - p1.x)**2 + (p0.y - p1.y)**2 + (p0.z - p1.z)**2)
+    if d > 0.6:
+        raise DistanceException
+        
+def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_pl=1, M_star=1, M_planet=3e-6, E_coef = 5343.21, check_distance = True ):# in meters / Hill spheres, here 0.01au
+    collision = False
     sim = rebound.Simulation()
     sim.collision = "line"
     sim.units = ("yr", "AU", "Msun")
@@ -39,7 +56,7 @@ def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_p
     sim.move_to_com()
 
 
-    data = np.zeros([nt, 2 * sim.N])
+    data = np.zeros([nt + 1, 2 * sim.N])
     time = np.linspace(0, n_orb, nt)
     
     if force == True:
@@ -50,13 +67,17 @@ def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_p
     try:
         for i, t in enumerate(time[1:]):
             sim.integrate(t)
-            data[i + 1, :] = [
-                coord / r_H for p in sim.particles for coord in [p.x, p.y]
-            ]
+            if check_distance:
+               distance_check(sim)
+            data[i + 1, :] = [coord / r_H for p in sim.particles for coord in [p.x, p.y]]
         # using coord instead of i for clarity
-    except rebound.Collision as error:
-        print(f"{error} for x_start = {x_h}, y_start = {y_h}")
-        data = data[: i + 1, :]
+    except (rebound.Collision, DistanceException) as e:
+        if isinstance(e, rebound.Collision):
+            collision = True
+        for j in range(6):    
+            data[i + 1, j] = float(collision)
+        data = data[:i + 2, :]
+        print(f"{e} for x_start = {x_h}, y_start = {y_h}")
     return data
 
 
@@ -65,19 +86,19 @@ def worker(arg, r_pebble, E_coef, n_orb = 20, nt = 50000, force = True):
 
 
 """
-data = my_simulation(r_pebble = 1, x_h = 10, y_h = 40) #IN HILL RADII FOR X,Y
+data = my_simulation(r_pebble = 1, x_h = 1., y_h = 0.5, force = False) #IN HILL RADII FOR X,Y
 
-width = 1100
+width = 300
 f, ax = plt.subplots()
-ax.plot(data[:, 0], data[:, 1], 'k+-')
-ax.plot(data[:, 2], data[:, 3], '+-')
-ax.plot(data[:, 4], data[:, 5], '+--')
+ax.plot(data[:-1, 0], data[:-1, 1], 'k+-')
+ax.plot(data[:-1, 2], data[:-1, 3], '+-')
+ax.plot(data[:-1, 4], data[:-1, 5], '+--')
 ax.set(xlim=[-width, width], ylim=[-width, width])
 ax.set_aspect(1)
 #ax.plot(x, y, style)
 
 
-phi = np.arctan2(data[:, 3], data[:, 2])
+phi = np.arctan2(data[:-1, 3], data[:-1, 2])
 
 def rotate(x, y, phi):
     c = np.cos(phi)
@@ -86,9 +107,9 @@ def rotate(x, y, phi):
 #rotation matrix [cosa -sina] [sina cosa]
 #the fkt returns 2 elements 
 
-x0, y0 = rotate(data[:, 0], data[:, 1], -phi)
-x1, y1 = rotate(data[:, 2], data[:, 3], -phi)
-x2, y2 = rotate(data[:, 4], data[:, 5], -phi)
+x0, y0 = rotate(data[:-1, 0], data[:-1, 1], -phi)
+x1, y1 = rotate(data[:-1, 2], data[:-1, 3], -phi)
+x2, y2 = rotate(data[:-1, 4], data[:-1, 5], -phi)
 
 width = 1e2
 f, ax = plt.subplots()
@@ -97,5 +118,5 @@ ax.plot(x1, y1, '+-')
 ax.plot(x2, y2, 'r--', linewidth=0.5)
 
 ax.set_aspect(1)
-ax.set(xlim=[1000-width, 1000+width], ylim=[-width, width]) 
-"""
+ax.set(xlim=[100-width, 100+width], ylim=[-width, width]) """
+
