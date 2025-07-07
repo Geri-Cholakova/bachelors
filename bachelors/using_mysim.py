@@ -50,7 +50,7 @@ ax.add_patch(r_earth)
 
 if __name__ == "__main__":
     number_x_values = 46
-    number_y_values = 5
+    number_y_values = 11
     x_values = np.linspace(1.0, 1.9, number_x_values)
     y_values = np.linspace(9, 10, number_y_values)
     # make long array with all parameter combinations, here x,z
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     else: 
         plt.savefig(f"Noforce_{filename}_rH.pdf", dpi=300,)
         
-    bins = [9, 4]
+    bins = [37, 1]
     range2d = [[x_values[0], x_values[-1]], [y_values[0], y_values[-1]]]
     
     
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(6, 5))
     plt.imshow(collision_fraction.T, origin='lower', extent=[
         xedges[0], xedges[-1], yedges[0], yedges[-1]],
-        cmap='Greys', interpolation='nearest', aspect='auto')
+        cmap='Greys', interpolation='nearest', aspect=0.1)
     plt.xlabel("x start (Hill units)")
     plt.ylabel("y start (Hill units)")
     plt.title("Collision Fraction per Starting Position")

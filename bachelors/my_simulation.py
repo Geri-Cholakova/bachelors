@@ -81,8 +81,8 @@ def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_p
     return data
 
 
-def worker(arg, r_pebble, E_coef, n_orb = 20, nt = 50000, force = True):
-    return my_simulation(r_pebble= r_pebble, x_h=arg[0], y_h=arg[1], z_h=0, n_orb=n_orb, nt=nt, force = force, E_coef = E_coef)
+def worker(arg, r_pebble, E_coef, n_orb = 20, nt = 50000, force = True, check_distance = True):
+    return my_simulation(r_pebble= r_pebble, x_h=arg[0], y_h=arg[1], z_h=0, n_orb=n_orb, nt=nt, force = force, E_coef = E_coef, check_distance = check_distance)
 
 
 """
