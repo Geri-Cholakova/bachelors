@@ -49,9 +49,9 @@ ax.add_patch(r_hill)
 ax.add_patch(r_earth)
 
 if __name__ == "__main__":
-    number_x_values = 46
-    number_y_values = 11
-    x_values = np.linspace(1.0, 1.9, number_x_values)
+    number_x_values = 2
+    number_y_values = 2
+    x_values = np.linspace(1.4, 1.7, number_x_values)
     y_values = np.linspace(9, 10, number_y_values)
     # make long array with all parameter combinations, here x,z
     xy = np.array(np.meshgrid(x_values, y_values, indexing="ij")).reshape(2, -1).T
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     ax.set_aspect(1)
     ax.set(xlim=[-width, width], ylim=[-2*width, 2*width])
-    filename = f"r_pebble_{s:.4f}_x_{x_values[0]:.2f}_{x_values[-1]:.2f}_y_{y_values[0]:.2f}_{y_values[-1]:.2f}_delx_{x_values[1]-x_values[0]}".replace('.', 'p')
+    filename = f"r_pebble_{s:.4f}_x_{x_values[0]:.2f}_{x_values[-1]:.2f}_y_{y_values[0]:.2f}_{y_values[-1]:.2f}_delx_{(x_values[1]-x_values[0]):.2f}".replace('.', 'p')
     # Result: x1p00_y2p50
 
     if force: 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     else: 
         plt.savefig(f"Noforce_{filename}_rH.pdf", dpi=300,)
         
-    bins = [37, 1]
+    bins = [2, 1]
     range2d = [[x_values[0], x_values[-1]], [y_values[0], y_values[-1]]]
     
     
@@ -106,5 +106,6 @@ if __name__ == "__main__":
     plt.title("Collision Fraction per Starting Position")
     plt.colorbar(label="Collision fraction")
     plt.tight_layout()
-    plt.savefig(f"heatmap_{filename}.pdf", dpi=300)
+    binsize = f"binsize_{((x_values[-1]-x_values[0])/bins[0]):.3f}".replace('.', 'p')
+    plt.savefig(f"heatmap_{filename}_{binsize}.pdf", dpi=300)
     plt.show()

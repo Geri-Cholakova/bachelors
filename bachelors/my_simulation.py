@@ -77,7 +77,6 @@ def my_simulation( r_pebble, x_h, y_h, force, z_h=0, nt=50000, n_orb=200, dist_p
         for j in range(6):    
             data[i + 1, j] = float(collision)
         data = data[:i + 2, :]
-        print(f"{e} for x_start = {x_h}, y_start = {y_h}")
     return data
 
 
